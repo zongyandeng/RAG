@@ -139,3 +139,9 @@ parser_specs_general_camera/
 # data/chunks_list.txt
 # results/per_question.csv
 # results/summary.json
+
+# Archives
+*.tar.gz
+*.zip
+*.tgz
+
