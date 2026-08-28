@@ -1,27 +1,27 @@
 {
     "metrics": {
         "long_context_baseline": {
-            "avg_input_tokens": 7438.033333333334,
-            "avg_total_latency_ms": 1270.0358947118123,
-            "p95_total_latency_ms": 1566.3281917572017
+            "avg_input_tokens": 5503.666666666667,
+            "avg_total_latency_ms": 1942.629559834798,
+            "p95_total_latency_ms": 2700.7879972457868
         },
         "basic_rag": {
-            "avg_input_tokens": 2165.5333333333333,
-            "avg_total_latency_ms": 1307.392152150472,
-            "p95_total_latency_ms": 1609.4142436981197,
+            "avg_input_tokens": 1531.0,
+            "avg_total_latency_ms": 2675.0160296758017,
+            "p95_total_latency_ms": 3363.5657668113704,
             "retrieval_hit_at_5": 0.8
         },
         "advanced_rag": {
-            "avg_input_tokens": 2052.5333333333333,
-            "avg_total_latency_ms": 6399.060710271199,
-            "p95_total_latency_ms": 7706.823909282683,
+            "avg_input_tokens": 1603.1666666666667,
+            "avg_total_latency_ms": 8025.783189137776,
+            "p95_total_latency_ms": 10303.378164768217,
             "candidate_recall_at_20": 1.0,
             "reranked_hit_at_5": 0.8,
             "evidence_recall_at_5": 1.0
         }
     },
     "achievements": {
-        "token_reduction_rate": 0.7240489197413296,
+        "token_reduction_rate": 0.7087093452849615,
         "ac_06_token_reduction_passed": true
     }
 }
