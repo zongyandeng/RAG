@@ -39,7 +39,7 @@ async def help_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
         "   - Stage 1: 使用 BGE-M3 檢索前 20 個最相關片段。\n"
         "   - Stage 2: 使用 BGE Reranker v2 M3 進行重排並精選前 5 個片段。\n"
         "   - 限制 Context 長度在 2,000 tokens 以內。\n"
-        "   - 使用 Hermes API 進行精確回答（附來源）。"
+        "   - 使用 Gemini API 進行精確回答（附來源）。"
     )
     await update.message.reply_text(help_text)
 

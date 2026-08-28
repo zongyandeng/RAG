@@ -9,9 +9,9 @@ SRC_DIR = os.path.dirname(os.path.abspath(__file__))
 WORKING_DIR = os.path.dirname(SRC_DIR)
 load_dotenv(os.path.join(WORKING_DIR, ".env"))
 
-HERMES_API_KEY = os.getenv("HERMES_API_KEY")
-HERMES_API_BASE = os.getenv("HERMES_API_BASE", "https://api.hermes-gateway.com/v1")
-HERMES_MODEL_NAME = os.getenv("HERMES_MODEL_NAME", "hermes-llama-3-8b")
+GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")
+GEMINI_API_BASE = os.getenv("GEMINI_API_BASE", "https://generativelanguage.googleapis.com/v1beta/openai")
+GEMINI_MODEL_NAME = os.getenv("GEMINI_MODEL_NAME", "gemini-3.5-flash-lite")
 
 _tokenizer = None
 
@@ -25,7 +25,7 @@ def get_tokenizer():
             print(f"Warning: Failed to load tiktoken. Error: {e}")
     return _tokenizer
 
-def count_tokens_via_api(text, model=HERMES_MODEL_NAME, api_key=HERMES_API_KEY, api_base=HERMES_API_BASE):
+def count_tokens_via_api(text, model=GEMINI_MODEL_NAME, api_key=GEMINI_API_KEY, api_base=GEMINI_API_BASE):
     if not api_key or not model or not api_base:
         return None
     # 檢查是否為 Gemini 模型
@@ -161,11 +161,11 @@ def generate(query, context_chunks, max_context_tokens=2000, stream=False):
         input_tokens = system_prompt_tokens + query_tokens
     
     # 檢查 API 金鑰
-    api_key = os.getenv("HERMES_API_KEY")
+    api_key = GEMINI_API_KEY
     if not api_key or "your_" in api_key or api_key.strip() == "":
         # 如果沒有設定 API Key，則返回 Mock 回答，方便測試
         mock_ans = (
-            "【測試模式：未偵測到 HERMES_API_KEY】\n"
+            "【測試模式：未偵測到 GEMINI_API_KEY】\n"
             f"收到您的問題：\"{query}\"\n"
             f"檢索到 {len(selected_chunks)} 個 Chunks，已加入 Context 的 Chunks 包括：\n"
         )
@@ -184,15 +184,15 @@ def generate(query, context_chunks, max_context_tokens=2000, stream=False):
             "output_tokens": count_tokens(mock_ans)
         }
         
-    # 初始化 OpenAI Client 連接 Hermes API Gateway
+    # 初始化 OpenAI Client 連接 Gemini API Gateway
     client = OpenAI(
         api_key=api_key,
-        base_url=HERMES_API_BASE
+        base_url=GEMINI_API_BASE
     )
     
     try:
         response = client.chat.completions.create(
-            model=HERMES_MODEL_NAME,
+            model=GEMINI_MODEL_NAME,
             messages=[
                 {"role": "system", "content": system_prompt},
                 {"role": "user", "content": query}

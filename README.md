@@ -1,6 +1,6 @@
 # RAG 兩階段檢索規格書問答系統
 
-本專案實作了一個基於 **兩階段檢索（Two-Stage Retrieval）** 與 **Token Budget** 控制的高效率問答系統（RAG），並串接 **Hermes API** 與 **Telegram Bot** 作為互動展示介面。
+本專案實作了一個基於 **兩階段檢索（Two-Stage Retrieval）** 與 **Token Budget** 控制的高效率問答系統（RAG），並串接 **Gemini API** 與 **Telegram Bot** 作為互動展示介面。
 
 本專案同時包含三組不同系統流程（Long-context Baseline、Basic RAG、Advanced RAG）的批次評估模組，以量化檢索召回率、正確率、Token 消耗量與延遲。
 
@@ -12,7 +12,7 @@
 2.  **第一階段檢索 (Stage 1)**：使用 `BAAI/bge-m3` 模型將問題向量化，於 FAISS 向量資料庫中搜尋相似度最高的 **Top-20 Chunks**。
 3.  **第二階段重排 (Stage 2)**：將問題與 Top-20 Chunks 輸入 `BAAI/bge-reranker-v2-m3` 交叉編碼重排模型，重新打分並篩選出最相關的 **Top-5 Chunks**。
 4.  **Token 預算限制 (Token Budget)**：依 Rerank 分數由高至低，逐一將 Chunk 加入 Prompt 的 Context。使用 Tokenizer 精確計算 Token 數，若超過 **2,000 tokens** 預算則予以去重或截斷。
-5.  **LLM 串流生成**：將組裝好的 Prompt 發送至 **Hermes API** 生成答案，並在答案末尾強制附帶引用來源（包括文件名稱、頁碼與 `chunk_id`）。
+5.  **LLM 串流生成**：將組裝好的 Prompt 發送至 **Gemini API** 生成答案，並在答案末尾強制附帶引用來源（包括文件名稱、頁碼與 `chunk_id`）。
 
 ---
 
@@ -43,11 +43,11 @@ cp .env.template .env
 
 然後編輯 `.env`，填入你的金鑰資訊：
 *   `TELEGRAM_BOT_TOKEN`：由 Telegram `@BotFather` 申請取得的 Token。
-*   `HERMES_API_KEY`：學長提供的 Hermes API 金鑰（請強制使用 Free Tier，不設定 Billing 就不會產生費用）。
-*   `HERMES_API_BASE`：學長提供的 API Gateway 端點（預設已填寫 `https://api.hermes-gateway.com/v1`）。
-*   `HERMES_MODEL_NAME`：指定的 Hermes LLM 模型名稱。
+*   `GEMINI_API_KEY`：您的 Gemini API 金鑰。
+*   `GEMINI_API_BASE`：您的 API Gateway 端點（預設已填寫 `https://generativelanguage.googleapis.com/v1beta/openai`）。
+*   `GEMINI_MODEL_NAME`：指定的 Gemini LLM 模型名稱（如 `gemini-3.5-flash-lite`）。
 
-*（提示：若未填寫 `HERMES_API_KEY`，系統會自動切換為「測試模式」，檢索模組依然會正常運作，LLM 會回傳 Mock 答案與檢索資訊以供 Demo 驗證。）*
+*（提示：若未填寫 `GEMINI_API_KEY`，系統會自動切換為「測試模式」，檢索模組依然會正常運作，LLM 會回傳 Mock 答案與檢索資訊以供 Demo 驗證。）*
 
 ---
 
@@ -55,7 +55,7 @@ cp .env.template .env
 
 ```text
 project/
-├── .env                   # 存放敏感金鑰（Hermes API Key & Telegram Token）(已在 .gitignore 中排除)
+├── .env                   # 存放敏感金鑰（Gemini API Key & Telegram Token）(已在 .gitignore 中排除)
 ├── .env.template          # 環境變數範本檔（已去除敏感金鑰，供部署時參考）
 ├── .gitignore             # Git 忽略清單（排除了 venv、.env、快取與暫存檔等）
 ├── README.md              # 專案說明文件（本檔案）
@@ -71,7 +71,7 @@ project/
 │   ├── ingest.py          # 離線解析規格書，進行 Chunking，計算 BGE-M3 向量並建置 FAISS 庫
 │   ├── retrieve.py        # 第一階段：BGE-M3 向量檢索 (召回 Top-20)
 │   ├── rerank.py          # 第二階段：BGE Reranker v2 M3 交叉重排 (精選 Top-5)
-│   ├── generate.py        # Token Budget 控制，拼裝 Prompt 並調用 Hermes API
+│   ├── generate.py        # Token Budget 控制，拼裝 Prompt 並調用 Gemini API
 │   └── evaluate.py        # 批次執行三組系統對照測試，統計 Recall、Latency、Tokens，生成報表
 └── results/
     ├── per_question.csv   # 逐題的各階段時間、分數、Tokens 及答案結果報表

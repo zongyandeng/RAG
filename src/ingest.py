@@ -23,9 +23,9 @@ CHUNKS_LOG_PATH = os.path.join(DATA_DIR, "chunks_list.txt") # 用於輸出給我
 
 # 載入環境變數以讀取 Gemini 設定
 load_dotenv(os.path.join(WORKING_DIR, ".env"))
-HERMES_API_KEY = os.getenv("HERMES_API_KEY")
-HERMES_API_BASE = os.getenv("HERMES_API_BASE", "https://api.hermes-gateway.com/v1")
-HERMES_MODEL_NAME = os.getenv("HERMES_MODEL_NAME", "hermes-llama-3-8b")
+GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")
+GEMINI_API_BASE = os.getenv("GEMINI_API_BASE", "https://generativelanguage.googleapis.com/v1beta/openai")
+GEMINI_MODEL_NAME = os.getenv("GEMINI_MODEL_NAME", "gemini-3.5-flash-lite")
 
 def load_tokenizer():
     # 使用 tiktoken 計算 token 數，這通常與 LLM (Hermes/OpenAI) 的計算方式一致
@@ -37,11 +37,11 @@ def load_tokenizer():
 
 def count_tokens(text, tokenizer):
     # 優先嘗試呼叫 Gemini API 取得精確數字
-    if HERMES_API_KEY and HERMES_MODEL_NAME and "gemini" in HERMES_MODEL_NAME.lower():
+    if GEMINI_API_KEY and GEMINI_MODEL_NAME and "gemini" in GEMINI_MODEL_NAME.lower():
         try:
             # 建立 REST API URL (移除 /openai 結尾以呼叫原生 API)
-            base_url = HERMES_API_BASE.replace("/openai", "")
-            url = f"{base_url}/models/{HERMES_MODEL_NAME}:countTokens?key={HERMES_API_KEY}"
+            base_url = GEMINI_API_BASE.replace("/openai", "")
+            url = f"{base_url}/models/{GEMINI_MODEL_NAME}:countTokens?key={GEMINI_API_KEY}"
             payload = {
                 "contents": [
                     {
