@@ -2,19 +2,19 @@
     "metrics": {
         "long_context_baseline": {
             "avg_input_tokens": 5503.666666666667,
-            "avg_total_latency_ms": 1942.629559834798,
-            "p95_total_latency_ms": 2700.7879972457868
+            "avg_total_latency_ms": 2550.899521509806,
+            "p95_total_latency_ms": 3577.0021557807904
         },
         "basic_rag": {
             "avg_input_tokens": 1531.0,
-            "avg_total_latency_ms": 2675.0160296758017,
-            "p95_total_latency_ms": 3363.5657668113704,
+            "avg_total_latency_ms": 2416.3018147150674,
+            "p95_total_latency_ms": 3390.556490421294,
             "retrieval_hit_at_5": 0.8
         },
         "advanced_rag": {
             "avg_input_tokens": 1603.1666666666667,
-            "avg_total_latency_ms": 8025.783189137776,
-            "p95_total_latency_ms": 10303.378164768217,
+            "avg_total_latency_ms": 7689.209485054016,
+            "p95_total_latency_ms": 9084.59689617157,
             "candidate_recall_at_20": 1.0,
             "reranked_hit_at_5": 0.8,
             "evidence_recall_at_5": 1.0
