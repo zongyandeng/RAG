@@ -57,6 +57,8 @@ def count_tokens(text, tokenizer):
                 res_data = response.json()
                 if "totalTokens" in res_data:
                     return res_data["totalTokens"]
+            else:
+                print(f"Warning: Gemini API countTokens returned status code {response.status_code}: {response.text}")
         except Exception as e:
             # 發生錯誤時默默地 fallback 到本地 tokenizer
             pass

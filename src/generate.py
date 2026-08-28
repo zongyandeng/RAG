@@ -55,6 +55,8 @@ def count_tokens_via_api(text, model=HERMES_MODEL_NAME, api_key=HERMES_API_KEY, 
         if response.status_code == 200:
             res_data = response.json()
             return res_data.get("totalTokens")
+        else:
+            print(f"Warning: Gemini API countTokens returned status code {response.status_code}: {response.text}")
     except Exception as e:
         print(f"Warning: Failed to call Gemini countTokens API: {e}")
     return None
@@ -66,6 +68,12 @@ def count_tokens(text):
         return api_tokens
         
     # 本地 fallback 流程
+    tok = get_tokenizer()
+    if tok:
+        return len(tok.encode(text))
+    return len(text) // 2 # 粗估
+
+def count_tokens_locally(text):
     tok = get_tokenizer()
     if tok:
         return len(tok.encode(text))
@@ -86,9 +94,12 @@ def build_context_with_budget(chunks, max_context_tokens=2000):
             continue
             
         chunk_text = chunk["text"]
-        # 包裝格式
-        formatted_chunk = f"Source: {chunk['document_name']}, Page: {chunk['page']}, ID: {chunk_id}\nContent: {chunk_text}\n\n"
-        chunk_tokens = count_tokens(formatted_chunk)
+        # 優先使用 ingestion 階段算好的精確 token_count。
+        # 包裝 Header 格式大約 15 ~ 20 tokens，我們加上 15 進行本地粗估以避免 API 呼叫。
+        raw_tokens = chunk.get("token_count")
+        if raw_tokens is None:
+            raw_tokens = count_tokens_locally(chunk_text)
+        chunk_tokens = raw_tokens + 15
         
         # 判斷是否會超出預算
         if current_tokens + chunk_tokens <= max_context_tokens:
@@ -108,7 +119,13 @@ def build_context_with_budget(chunks, max_context_tokens=2000):
         )
     context_text = "\n---\n".join(context_parts)
     
-    return context_text, selected_chunks, current_tokens
+    # 最終組裝好的 context，只對它呼叫 1 次 API 取得 100% 精確的總 tokens 數做紀錄
+    if selected_chunks:
+        context_tokens = count_tokens(context_text)
+    else:
+        context_tokens = 0
+    
+    return context_text, selected_chunks, context_tokens
 
 def generate(query, context_chunks, max_context_tokens=2000, stream=False):
     """
@@ -131,11 +148,17 @@ def generate(query, context_chunks, max_context_tokens=2000, stream=False):
         "--------------------\n"
     )
     
-    # 計算各部分 Token
-    system_prompt_tokens = count_tokens(system_prompt)
-    query_tokens = count_tokens(query)
+    # 優先使用本地估算以減少線上 API 呼叫次數，若是非串流模式，稍後會以 API 回傳的 usage 做 100% 精確校正
+    system_prompt_tokens = count_tokens_locally(system_prompt)
+    query_tokens = count_tokens_locally(query)
     history_tokens = 0 # 單輪問答，對話歷史 token 為 0
     input_tokens = system_prompt_tokens + query_tokens
+    
+    # 如果是串流模式，因為無法從回應的 metadata 取得 usage，因此我們發送 2 次 API 請求以精確校正輸入端的 Tokens
+    if stream:
+        system_prompt_tokens = count_tokens(system_prompt)
+        query_tokens = count_tokens(query)
+        input_tokens = system_prompt_tokens + query_tokens
     
     # 檢查 API 金鑰
     api_key = os.getenv("HERMES_API_KEY")
