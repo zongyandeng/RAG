@@ -9,6 +9,8 @@ import pdfplumber
 from tqdm import tqdm
 from FlagEmbedding import BGEM3FlagModel
 import tiktoken
+import requests
+from dotenv import load_dotenv
 
 # 設定路徑
 SRC_DIR = os.path.dirname(os.path.abspath(__file__))
@@ -19,6 +21,12 @@ INDEX_PATH = os.path.join(DATA_DIR, "faiss_index.bin")
 METADATA_PATH = os.path.join(DATA_DIR, "metadata.pkl")
 CHUNKS_LOG_PATH = os.path.join(DATA_DIR, "chunks_list.txt") # 用於輸出給我們編寫 question 的清單
 
+# 載入環境變數以讀取 Gemini 設定
+load_dotenv(os.path.join(WORKING_DIR, ".env"))
+HERMES_API_KEY = os.getenv("HERMES_API_KEY")
+HERMES_API_BASE = os.getenv("HERMES_API_BASE", "https://api.hermes-gateway.com/v1")
+HERMES_MODEL_NAME = os.getenv("HERMES_MODEL_NAME", "hermes-llama-3-8b")
+
 def load_tokenizer():
     # 使用 tiktoken 計算 token 數，這通常與 LLM (Hermes/OpenAI) 的計算方式一致
     try:
@@ -28,6 +36,31 @@ def load_tokenizer():
         return None
 
 def count_tokens(text, tokenizer):
+    # 優先嘗試呼叫 Gemini API 取得精確數字
+    if HERMES_API_KEY and HERMES_MODEL_NAME and "gemini" in HERMES_MODEL_NAME.lower():
+        try:
+            # 建立 REST API URL (移除 /openai 結尾以呼叫原生 API)
+            base_url = HERMES_API_BASE.replace("/openai", "")
+            url = f"{base_url}/models/{HERMES_MODEL_NAME}:countTokens?key={HERMES_API_KEY}"
+            payload = {
+                "contents": [
+                    {
+                        "parts": [
+                            {"text": text}
+                        ]
+                    }
+                ]
+            }
+            headers = {"Content-Type": "application/json"}
+            response = requests.post(url, json=payload, headers=headers, timeout=5)
+            if response.status_code == 200:
+                res_data = response.json()
+                if "totalTokens" in res_data:
+                    return res_data["totalTokens"]
+        except Exception as e:
+            # 發生錯誤時默默地 fallback 到本地 tokenizer
+            pass
+
     if tokenizer:
         return len(tokenizer.encode(text))
     return len(text) # fallback

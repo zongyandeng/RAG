@@ -1,5 +1,6 @@
 import os
 import tiktoken
+import requests
 from dotenv import load_dotenv
 from openai import OpenAI
 
@@ -24,7 +25,47 @@ def get_tokenizer():
             print(f"Warning: Failed to load tiktoken. Error: {e}")
     return _tokenizer
 
+def count_tokens_via_api(text, model=HERMES_MODEL_NAME, api_key=HERMES_API_KEY, api_base=HERMES_API_BASE):
+    if not api_key or not model or not api_base:
+        return None
+    # 檢查是否為 Gemini 模型
+    if "gemini" not in model.lower():
+        return None
+    
+    # 建立 REST API URL (移除 /openai 結尾以呼叫原生 API)
+    base_url = api_base.replace("/openai", "")
+    url = f"{base_url}/models/{model}:countTokens?key={api_key}"
+    
+    payload = {
+        "contents": [
+            {
+                "parts": [
+                    {"text": text}
+                ]
+            }
+        ]
+    }
+    
+    headers = {
+        "Content-Type": "application/json"
+    }
+    
+    try:
+        response = requests.post(url, json=payload, headers=headers, timeout=5)
+        if response.status_code == 200:
+            res_data = response.json()
+            return res_data.get("totalTokens")
+    except Exception as e:
+        print(f"Warning: Failed to call Gemini countTokens API: {e}")
+    return None
+
 def count_tokens(text):
+    # 優先使用 Gemini API 計算精確 token 數
+    api_tokens = count_tokens_via_api(text)
+    if api_tokens is not None:
+        return api_tokens
+        
+    # 本地 fallback 流程
     tok = get_tokenizer()
     if tok:
         return len(tok.encode(text))
